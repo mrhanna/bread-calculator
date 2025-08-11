@@ -8,16 +8,26 @@ export default function RecipeEditorPane() {
   const dispatch = useAppDispatch();
 
   return (
-    <Paper sx={{ p: 8 }}>
+    <Paper sx={{ p: 8, width: 500 }}>
       <Stack spacing={4}>
-        <Box>
-          <Typography variant="h2">
-            {recipe.name || 'Unnamed Recipe'}
-          </Typography>
-        </Box>
-        {recipe.ingredients.map((ingredient) => (
-          <IngredientPicker key={ingredient.id} ingredient={ingredient} />
-        ))}
+        <Typography variant="h2">{recipe.name || 'Unnamed Recipe'}</Typography>
+
+        <Typography variant="h3">Flour</Typography>
+        <Grid container spacing={4}>
+          {recipe.ingredients.flours.map((ingredient) => (
+            <IngredientPicker
+              scope="flours"
+              key={ingredient.id}
+              ingredient={ingredient}
+            />
+          ))}
+        </Grid>
+        <Grid container spacing={4}>
+          <Typography variant="h3">Other Ingredients</Typography>
+          {recipe.ingredients.others.map((ingredient) => (
+            <IngredientPicker key={ingredient.id} ingredient={ingredient} />
+          ))}
+        </Grid>
       </Stack>
     </Paper>
   );

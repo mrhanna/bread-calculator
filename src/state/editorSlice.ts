@@ -6,6 +6,7 @@ import {
   type Recipe,
 } from '../model';
 import type { RootState } from './store';
+import type { WritableDraft } from 'immer';
 
 export interface EditorState {
   recipes: Record<string, Recipe>;
@@ -29,46 +30,14 @@ const editorSlice = createSlice({
     nameEdited: (state, { payload }: PayloadAction<string>) => {
       state.recipes[state.currentRecipeId].name = payload;
     },
-    ingredientAdded: (state) => {
-      state.recipes[state.currentRecipeId].ingredients.push(createIngredient());
-    },
-    ingredientRemoved: (state, { payload }: PayloadAction<string>) => {
-      state.recipes[state.currentRecipeId].ingredients = state.recipes[
-        state.currentRecipeId
-      ].ingredients.filter(
-        (ingredient: Ingredient) => ingredient.id !== payload
-      );
-    },
-    ingredientEdited: (
-      state,
-      {
-        payload,
-      }: PayloadAction<{ id: string; name?: string; percentage?: number }>
-    ) => {
-      state.recipes[state.currentRecipeId].ingredients = state.recipes[
-        state.currentRecipeId
-      ].ingredients.map((ingredient: Ingredient) =>
-        ingredient.id === payload.id
-          ? { ...ingredient, ...payload }
-          : ingredient
-      );
-    },
-    ingredientReordered: (
-      state,
-      { payload }: PayloadAction<{ oldPosition: number; newPosition: number }>
-    ) => {
-      const ingredient =
-        state.recipes[state.currentRecipeId].ingredients[payload.oldPosition];
-      state.recipes[state.currentRecipeId].ingredients.splice(
-        payload.oldPosition,
-        1
-      );
-      state.recipes[state.currentRecipeId].ingredients.splice(
-        payload.newPosition,
-        0,
-        ingredient
-      );
-    },
+    ingredientAdded: makeAddIngredient('others'),
+    ingredientRemoved: makeRemoveIngredient('others'),
+    ingredientEdited: makeEditIngredient('others'),
+    ingredientReordered: makeReorderIngredient('others'),
+    flourAdded: makeAddIngredient('flours'),
+    flourRemoved: makeRemoveIngredient('flours'),
+    flourEdited: makeEditIngredient('flours'),
+    flourReordered: makeReorderIngredient('flours'),
     recipeSelected: (state, { payload }: PayloadAction<string>) => {
       state.currentRecipeId = payload;
     },
@@ -86,6 +55,63 @@ const editorSlice = createSlice({
   },
 });
 
+function makeAddIngredient(scope: 'flours' | 'others') {
+  return function addIngredient(state: WritableDraft<EditorState>) {
+    state.recipes[state.currentRecipeId].ingredients[scope].push(
+      createIngredient()
+    );
+  };
+}
+
+function makeRemoveIngredient(scope: 'flours' | 'others') {
+  return function removeIngredient(
+    state: WritableDraft<EditorState>,
+    action: PayloadAction<string>
+  ) {
+    state.recipes[state.currentRecipeId].ingredients[scope] = state.recipes[
+      state.currentRecipeId
+    ].ingredients[scope].filter(
+      (ingredient: Ingredient) => ingredient.id !== action.payload
+    );
+  };
+}
+
+function makeEditIngredient(scope: 'flours' | 'others') {
+  return function editIngredient(
+    state: WritableDraft<EditorState>,
+    action: PayloadAction<{ id: string; name?: string; measure?: number }>
+  ) {
+    state.recipes[state.currentRecipeId].ingredients[scope] = state.recipes[
+      state.currentRecipeId
+    ].ingredients[scope].map((ingredient: Ingredient) =>
+      ingredient.id === action.payload.id
+        ? { ...ingredient, ...action.payload }
+        : ingredient
+    );
+  };
+}
+
+function makeReorderIngredient(scope: 'flours' | 'others') {
+  return function reorderIngredient(
+    state: WritableDraft<EditorState>,
+    action: PayloadAction<{ oldPosition: number; newPosition: number }>
+  ) {
+    const ingredient =
+      state.recipes[state.currentRecipeId].ingredients[scope][
+        action.payload.oldPosition
+      ];
+    state.recipes[state.currentRecipeId].ingredients[scope].splice(
+      action.payload.oldPosition,
+      1
+    );
+    state.recipes[state.currentRecipeId].ingredients[scope].splice(
+      action.payload.newPosition,
+      0,
+      ingredient
+    );
+  };
+}
+
 export const selectCurrentRecipe = (state: RootState) =>
   state.editor.recipes[state.editor.currentRecipeId];
 
@@ -95,6 +121,10 @@ export const {
   ingredientRemoved,
   ingredientEdited,
   ingredientReordered,
+  flourAdded,
+  flourRemoved,
+  flourEdited,
+  flourReordered,
   recipeSelected,
   recipeAdded,
   recipeDeleted,
