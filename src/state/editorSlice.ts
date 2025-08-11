@@ -5,6 +5,7 @@ import {
   type Ingredient,
   type Recipe,
 } from '../model';
+import type { RootState } from './store';
 
 export interface EditorState {
   recipes: Record<string, Recipe>;
@@ -84,6 +85,9 @@ const editorSlice = createSlice({
     },
   },
 });
+
+export const selectCurrentRecipe = (state: RootState) =>
+  state.editor.recipes[state.editor.currentRecipeId];
 
 export const {
   nameEdited,
