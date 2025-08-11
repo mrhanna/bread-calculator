@@ -1,9 +1,9 @@
-import { type RecipeIngredient } from './ingredient';
+import { createIngredient, type Ingredient } from './ingredient';
 
 export interface Recipe {
   id: string;
   name: string;
-  ingredients: RecipeIngredient[];
+  ingredients: Ingredient[];
 }
 
 export function createDefaultRecipe(): Recipe {
@@ -11,10 +11,10 @@ export function createDefaultRecipe(): Recipe {
     id: crypto.randomUUID(),
     name: '',
     ingredients: [
-      { name: 'bread flour', percentage: 100 },
-      { name: 'water', percentage: 70 },
-      { name: 'salt', percentage: 2 },
-      { name: 'instant yeast', percentage: 1 },
+      createIngredient('bread flour', 100),
+      createIngredient('water', 70),
+      createIngredient('salt', 2),
+      createIngredient('instant yeast', 1),
     ],
   };
 }
