@@ -56,7 +56,7 @@ export default function IngredientPicker({
       <Autocomplete
         fullWidth
         options={ingredients[category]}
-        value={ingredient.name}
+        value={ingredient?.name ?? ''}
         onChange={(_event, value) => handleChange({ name: value ?? '' })}
         freeSolo
         renderInput={(params) => (
@@ -67,7 +67,7 @@ export default function IngredientPicker({
       {!measureHidden && (
         <NumberTextField
           variant="standard"
-          value={ingredient.measure}
+          value={ingredient?.measure ?? 0}
           sx={{ width: 150 }}
           label={category === 'flours' ? 'parts' : ''}
           slotProps={{

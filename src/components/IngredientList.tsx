@@ -13,8 +13,11 @@ import {
   selectFlourList,
   selectOtherIngredientList,
 } from '../state/editorSlice';
-import { Box, Button } from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Collapse from '@mui/material/Collapse';
 import Measurement from './Measurement';
+import TransitionGroup from 'react-transition-group/TransitionGroup';
 
 const selectors = {
   flours: selectFlourList,
@@ -30,38 +33,45 @@ export default function IngredientList({
   const dispatch = useAppDispatch();
 
   return (
-    <Stack width="100%" spacing={2}>
-      {ingredients.map((ingredient) => (
-        <Stack
-          key={ingredient.id}
-          spacing={2}
-          direction="row"
-          alignItems="flex-end"
-        >
-          <IngredientPicker
-            width={400}
-            category={category}
-            id={ingredient.id}
-            measureHidden={ingredients.length === 1}
-          />
-
-          <Box sx={{ flexGrow: 1, py: 0.5 }}>
-            <Measurement category={category} measure={ingredient.measure} />
-          </Box>
-
-          {ingredients.length > 1 && (
-            <IconButton aria-label="Delete">
-              <DeleteIcon
-                onClick={() => {
-                  const remove =
-                    category === 'flours' ? flourRemoved : ingredientRemoved;
-                  dispatch(remove(ingredient.id));
-                }}
+    <Stack width="100%" spacing={0}>
+      <TransitionGroup component={null}>
+        {ingredients.map((ingredient) => (
+          <Collapse key={ingredient.id}>
+            <Stack
+              spacing={2}
+              direction="row"
+              alignItems="flex-end"
+              sx={{
+                mb: 2,
+              }}
+            >
+              <IngredientPicker
+                width={400}
+                category={category}
+                id={ingredient.id}
+                measureHidden={ingredients.length === 1}
               />
-            </IconButton>
-          )}
-        </Stack>
-      ))}
+
+              <Box sx={{ flexGrow: 1, py: 0.5 }}>
+                <Measurement category={category} measure={ingredient.measure} />
+              </Box>
+
+              {ingredients.length > 1 && (
+                <IconButton
+                  aria-label="Delete"
+                  onClick={() => {
+                    const remove =
+                      category === 'flours' ? flourRemoved : ingredientRemoved;
+                    dispatch(remove(ingredient.id));
+                  }}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              )}
+            </Stack>
+          </Collapse>
+        ))}
+      </TransitionGroup>
       <Box display="flex" justifyContent="flex-end" width={400}>
         <Button
           onClick={() => {
