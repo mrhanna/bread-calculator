@@ -1,67 +1,93 @@
-import { Autocomplete, Grid, Stack, TextField } from '@mui/material';
-import { useAppDispatch } from '../state/hooks';
+import Autocomplete from '@mui/material/Autocomplete';
+import Stack, { type StackProps } from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+
+import { useAppDispatch, useAppSelector } from '../state/hooks';
 
 import ingredients from '../assets/ingredients.json';
-import type { Ingredient } from '../model';
 import { useCallback } from 'react';
-import { flourEdited, ingredientEdited } from '../state/editorSlice';
+import {
+  flourEdited,
+  ingredientEdited,
+  selectFlourById,
+  selectOtherIngredientById,
+} from '../state/editorSlice';
+import type { RecipeIngredientCategory } from '../model';
+import NumberTextField from './NumberTextField';
+
+const selectors = {
+  flours: selectFlourById,
+  others: selectOtherIngredientById,
+};
+
+const handlers = {
+  flours: flourEdited,
+  others: ingredientEdited,
+};
+
+const labels = {
+  flours: 'Flour',
+  others: 'Ingredient',
+};
 
 export default function IngredientPicker({
-  ingredient,
-  scope = 'others',
-  hidePercentage = false,
+  id,
+  category,
+  measureHidden = false,
+  width,
 }: {
-  ingredient: Ingredient;
-  scope?: 'flours' | 'others';
-  hidePercentage?: boolean;
+  id: string;
+  category: RecipeIngredientCategory;
+  measureHidden?: boolean;
+  width: StackProps['width'];
 }) {
+  const ingredient = useAppSelector(selectors[category](id));
   const dispatch = useAppDispatch();
+
   const handleChange = useCallback(
     (change: { name?: string; measure?: number }) => {
-      const action = scope === 'flours' ? flourEdited : ingredientEdited;
-      dispatch(action({ id: ingredient.id, ...change }));
+      dispatch(handlers[category]({ id, ...change }));
     },
-    [dispatch, scope, ingredient.id]
+    [dispatch, category, id]
   );
 
   return (
-    <>
-      <Grid size={hidePercentage ? 12 : 8}>
-        <Autocomplete
-          options={ingredients[scope]}
-          value={ingredient.name}
-          onChange={(_event, value) => handleChange({ name: value ?? '' })}
-          freeSolo
-          renderInput={(params) => <TextField {...params} label="Ingredient" />}
-        />
-      </Grid>
+    <Stack direction="row" spacing={2} width={width} alignItems="flex-end">
+      <Autocomplete
+        fullWidth
+        options={ingredients[category]}
+        value={ingredient.name}
+        onChange={(_event, value) => handleChange({ name: value ?? '' })}
+        freeSolo
+        renderInput={(params) => (
+          <TextField {...params} variant="standard" label={labels[category]} />
+        )}
+      />
 
-      {!hidePercentage && (
-        <Grid size={4}>
-          <TextField
-            fullWidth
-            type="number"
-            value={ingredient.measure}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <span
-                    style={{
-                      color: '#999',
-                      marginLeft: 8,
-                    }}
-                  >
-                    {scope === 'flours' ? 'parts' : '%'}
-                  </span>
-                ),
-              },
-            }}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              handleChange({ measure: +e.target.value })
-            }
-          />
-        </Grid>
+      {!measureHidden && (
+        <NumberTextField
+          variant="standard"
+          value={ingredient.measure}
+          sx={{ width: 150 }}
+          slotProps={{
+            input: {
+              endAdornment: (
+                <span
+                  style={{
+                    color: '#999',
+                    marginLeft: 8,
+                  }}
+                >
+                  {category === 'flours' ? 'parts' : '%'}
+                </span>
+              ),
+            },
+          }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            handleChange({ measure: +e.target.value })
+          }
+        />
       )}
-    </>
+    </Stack>
   );
 }
