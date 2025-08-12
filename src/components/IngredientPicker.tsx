@@ -69,18 +69,20 @@ export default function IngredientPicker({
           variant="standard"
           value={ingredient.measure}
           sx={{ width: 150 }}
+          label={category === 'flours' ? 'parts' : ''}
           slotProps={{
             input: {
-              endAdornment: (
-                <span
-                  style={{
-                    color: '#999',
-                    marginLeft: 8,
-                  }}
-                >
-                  {category === 'flours' ? 'parts' : '%'}
-                </span>
-              ),
+              endAdornment:
+                category === 'others' ? (
+                  <span
+                    style={{
+                      color: '#999',
+                      marginLeft: 8,
+                    }}
+                  >
+                    %
+                  </span>
+                ) : undefined,
             },
           }}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
