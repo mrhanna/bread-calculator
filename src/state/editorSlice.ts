@@ -1,25 +1,23 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import {
-  createDefaultRecipe,
-  createIngredient,
-  type Ingredient,
-  type Recipe,
-} from '../model';
+  createSlice,
+  createSelector,
+  type PayloadAction,
+} from '@reduxjs/toolkit';
+import { createDefaultRecipe, createIngredient, type Recipe } from '../model';
 import type { RootState } from './store';
 import type { WritableDraft } from 'immer';
+import { toNormalized, type Normalized } from '../utils/normalize';
 
 export interface EditorState {
-  recipes: Record<string, Recipe>;
+  recipes: Normalized<Recipe>;
   currentRecipeId: string;
 }
 
-const initializeState = () => {
-  const recipe = createDefaultRecipe();
+const initializeState = (): EditorState => {
+  const recipes = [createDefaultRecipe()];
   return {
-    recipes: {
-      [recipe.id]: recipe,
-    },
-    currentRecipeId: recipe.id,
+    recipes: toNormalized(recipes),
+    currentRecipeId: recipes[0].id,
   };
 };
 
@@ -28,7 +26,7 @@ const editorSlice = createSlice({
   initialState: initializeState,
   reducers: {
     nameEdited: (state, { payload }: PayloadAction<string>) => {
-      state.recipes[state.currentRecipeId].name = payload;
+      state.recipes.byId[state.currentRecipeId].name = payload;
     },
     ingredientAdded: makeAddIngredient('others'),
     ingredientRemoved: makeRemoveIngredient('others'),
@@ -43,11 +41,12 @@ const editorSlice = createSlice({
     },
     recipeAdded: (state) => {
       const recipe = createDefaultRecipe();
-      state.recipes[recipe.id] = recipe;
+      state.recipes.byId[recipe.id] = recipe;
+      state.recipes.allIds.push(recipe.id);
       state.currentRecipeId = recipe.id;
     },
     recipeDeleted: (state, { payload }: PayloadAction<string>) => {
-      delete state.recipes[payload];
+      delete state.recipes.byId[payload];
       if (state.currentRecipeId === payload) {
         state.currentRecipeId = Object.keys(state.recipes)[0];
       }
@@ -57,9 +56,10 @@ const editorSlice = createSlice({
 
 function makeAddIngredient(scope: 'flours' | 'others') {
   return function addIngredient(state: WritableDraft<EditorState>) {
-    state.recipes[state.currentRecipeId].ingredients[scope].push(
-      createIngredient()
-    );
+    const list = state.recipes.byId[state.currentRecipeId].ingredients[scope];
+    const ingredient = createIngredient();
+    list.byId[ingredient.id] = ingredient;
+    list.allIds.push(ingredient.id);
   };
 }
 
@@ -68,11 +68,9 @@ function makeRemoveIngredient(scope: 'flours' | 'others') {
     state: WritableDraft<EditorState>,
     action: PayloadAction<string>
   ) {
-    state.recipes[state.currentRecipeId].ingredients[scope] = state.recipes[
-      state.currentRecipeId
-    ].ingredients[scope].filter(
-      (ingredient: Ingredient) => ingredient.id !== action.payload
-    );
+    const list = state.recipes.byId[state.currentRecipeId].ingredients[scope];
+    list.allIds = list.allIds.filter((id) => id !== action.payload);
+    delete list.byId[action.payload];
   };
 }
 
@@ -81,13 +79,11 @@ function makeEditIngredient(scope: 'flours' | 'others') {
     state: WritableDraft<EditorState>,
     action: PayloadAction<{ id: string; name?: string; measure?: number }>
   ) {
-    state.recipes[state.currentRecipeId].ingredients[scope] = state.recipes[
-      state.currentRecipeId
-    ].ingredients[scope].map((ingredient: Ingredient) =>
-      ingredient.id === action.payload.id
-        ? { ...ingredient, ...action.payload }
-        : ingredient
-    );
+    const ingredient =
+      state.recipes.byId[state.currentRecipeId].ingredients[scope].byId[
+        action.payload.id
+      ];
+    Object.assign(ingredient, action.payload);
   };
 }
 
@@ -96,24 +92,63 @@ function makeReorderIngredient(scope: 'flours' | 'others') {
     state: WritableDraft<EditorState>,
     action: PayloadAction<{ oldPosition: number; newPosition: number }>
   ) {
-    const ingredient =
-      state.recipes[state.currentRecipeId].ingredients[scope][
-        action.payload.oldPosition
-      ];
-    state.recipes[state.currentRecipeId].ingredients[scope].splice(
-      action.payload.oldPosition,
-      1
-    );
-    state.recipes[state.currentRecipeId].ingredients[scope].splice(
-      action.payload.newPosition,
-      0,
-      ingredient
-    );
+    const list = state.recipes.byId[state.currentRecipeId].ingredients[scope];
+    const id = list.allIds[action.payload.oldPosition];
+    list.allIds.splice(action.payload.oldPosition, 1);
+    list.allIds.splice(action.payload.newPosition, 0, id);
   };
 }
 
-export const selectCurrentRecipe = (state: RootState) =>
-  state.editor.recipes[state.editor.currentRecipeId];
+export const selectEditor = (state: RootState) => state.editor;
+
+export const selectRecipes = createSelector(
+  selectEditor,
+  (editor) => editor.recipes.byId
+);
+
+export const selectRecipeIds = createSelector(selectEditor, (editor) =>
+  Object.keys(editor.recipes.byId)
+);
+
+export const selectCurrentRecipeId = createSelector(
+  selectEditor,
+  (editor) => editor.currentRecipeId
+);
+
+export const selectCurrentRecipe = createSelector(
+  [selectRecipes, selectCurrentRecipeId],
+  (recipes, currentId) => recipes[currentId]
+);
+
+export const selectIngredients = createSelector(
+  selectCurrentRecipe,
+  (recipe) => recipe.ingredients
+);
+
+export const selectFlours = createSelector(
+  selectIngredients,
+  (ingredients) => ingredients.flours
+);
+
+export const selectOtherIngredients = createSelector(
+  selectIngredients,
+  (ingredients) => ingredients.others
+);
+
+export const selectFlourList = createSelector(selectFlours, (flours) =>
+  flours.allIds.map((id) => flours.byId[id])
+);
+
+export const selectOtherIngredientList = createSelector(
+  selectOtherIngredients,
+  (others) => others.allIds.map((id) => others.byId[id])
+);
+
+export const selectFlourById = (id: string) =>
+  createSelector(selectFlours, (flours) => flours.byId[id]);
+
+export const selectOtherIngredientById = (id: string) =>
+  createSelector(selectOtherIngredients, (others) => others.byId[id]);
 
 export const {
   nameEdited,
