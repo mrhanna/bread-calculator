@@ -1,11 +1,12 @@
 import { createIngredient, type Ingredient } from './ingredient';
+import { type Normalized, toNormalized } from '../utils/normalize';
 
 export interface Recipe {
   id: string;
   name: string;
   ingredients: {
-    flours: Ingredient[];
-    others: Ingredient[];
+    flours: Normalized<Ingredient>;
+    others: Normalized<Ingredient>;
   };
 }
 
@@ -14,12 +15,12 @@ export function createDefaultRecipe(): Recipe {
     id: crypto.randomUUID(),
     name: '',
     ingredients: {
-      flours: [createIngredient('bread flour', 100)],
-      others: [
+      flours: toNormalized([createIngredient('bread flour', 1)]),
+      others: toNormalized([
         createIngredient('water', 70),
         createIngredient('salt', 2),
         createIngredient('instant yeast', 1),
-      ],
+      ]),
     },
   };
 }
