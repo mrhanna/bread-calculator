@@ -9,6 +9,7 @@ export default function NumberTextField(props: TextFieldProps) {
   useEffect(() => {
     valueRef.current = props.value;
     if (document.activeElement !== inputRef.current) {
+      console.log('setValue');
       setValue(`${props.value}`);
     }
   }, [props.value]);
@@ -36,7 +37,7 @@ export default function NumberTextField(props: TextFieldProps) {
       value={value}
       onChange={handleChange}
       onBlur={handleBlur}
-      ref={inputRef}
+      inputRef={inputRef}
       inputMode={props.inputMode ?? 'decimal'}
     />
   );
