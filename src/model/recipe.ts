@@ -10,6 +10,8 @@ export interface Recipe {
   };
 }
 
+export type RecipeIngredientCategory = keyof Recipe['ingredients'];
+
 export function createDefaultRecipe(): Recipe {
   return {
     id: crypto.randomUUID(),
