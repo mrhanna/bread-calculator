@@ -8,9 +8,18 @@ import type { RootState } from './store';
 import type { WritableDraft } from 'immer';
 import { toNormalized, type Normalized } from '../utils/normalize';
 
+const DECIMAL_PLACES = 1;
+const round = (number: number) => +number.toFixed(DECIMAL_PLACES);
+
+export type WeightTargetType = 'flour' | 'dough';
+export interface WeightTarget {
+  weight: number;
+  type: WeightTargetType;
+}
+
 export interface EditorState {
   recipes: Normalized<Recipe>;
-  flourWeightTarget: number;
+  weightTarget: WeightTarget;
   currentRecipeId: string;
 }
 
@@ -18,7 +27,10 @@ const initializeState = (): EditorState => {
   const recipes = [createDefaultRecipe()];
   return {
     recipes: toNormalized(recipes),
-    flourWeightTarget: 500,
+    weightTarget: {
+      weight: 500,
+      type: 'flour',
+    },
     currentRecipeId: recipes[0].id,
   };
 };
@@ -30,26 +42,9 @@ const editorSlice = createSlice({
     nameEdited: (state, { payload }: PayloadAction<string>) => {
       state.recipes.byId[state.currentRecipeId].name = payload;
     },
-    targetWeightChanged: (
-      state,
-      { payload }: PayloadAction<{ weight: number; type: 'dough' | 'flour' }>
-    ) => {
-      switch (payload.type) {
-        case 'flour':
-          state.flourWeightTarget = payload.weight;
-          return;
-        case 'dough':
-          const list = Object.values(
-            state.recipes.byId[state.currentRecipeId].ingredients.others.byId
-          );
-          const totalPercentage =
-            list.reduce<number>(
-              (acc, ingredient) => acc + ingredient.measure,
-              0
-            ) + 100;
-          state.flourWeightTarget = (payload.weight * 100) / totalPercentage;
-          return;
-      }
+    targetWeightChanged: (state, { payload }: PayloadAction<WeightTarget>) => {
+      state.weightTarget = { ...payload };
+      state.weightTarget.weight = round(state.weightTarget.weight);
     },
     ingredientAdded: makeAddIngredient('others'),
     ingredientRemoved: makeRemoveIngredient('others'),
@@ -102,11 +97,18 @@ function makeEditIngredient(scope: 'flours' | 'others') {
     state: WritableDraft<EditorState>,
     action: PayloadAction<{ id: string; name?: string; measure?: number }>
   ) {
+    const modifiedPayload = {};
+    Object.assign(
+      modifiedPayload,
+      action.payload,
+      action.payload.measure ? { measure: round(action.payload.measure) } : {}
+    );
+
     const ingredient =
       state.recipes.byId[state.currentRecipeId].ingredients[scope].byId[
         action.payload.id
       ];
-    Object.assign(ingredient, action.payload);
+    Object.assign(ingredient, modifiedPayload);
   };
 }
 
@@ -123,11 +125,6 @@ function makeReorderIngredient(scope: 'flours' | 'others') {
 }
 
 export const selectEditor = (state: RootState) => state.editor;
-
-export const selectFlourWeight = createSelector(
-  selectEditor,
-  (editor) => editor.flourWeightTarget
-);
 
 export const selectRecipes = createSelector(
   selectEditor,
@@ -178,9 +175,32 @@ export const selectTotalPercentage = createSelector(
     list.reduce<number>((acc, ingredient) => acc + ingredient.measure, 0) + 100
 );
 
+const selectWeightTarget = createSelector(
+  selectEditor,
+  (editor) => editor.weightTarget
+);
+
+export const selectFlourWeight = createSelector(
+  [selectWeightTarget, selectTotalPercentage],
+  (weightTarget, totalPercentage) => {
+    if (weightTarget.type === 'flour') {
+      return weightTarget.weight;
+    }
+
+    // convert dough weight to flour weight
+    return round((weightTarget.weight * 100) / totalPercentage);
+  }
+);
+
 export const selectTotalWeight = createSelector(
-  [selectTotalPercentage, selectFlourWeight],
-  (percentage, flourWeight) => (percentage * flourWeight) / 100
+  [selectWeightTarget, selectTotalPercentage],
+  (weightTarget, totalPercentage) => {
+    if (weightTarget.type === 'dough') {
+      return weightTarget.weight;
+    }
+
+    return round((totalPercentage * weightTarget.weight) / 100);
+  }
 );
 
 export const selectFlourById = (id: string) =>
