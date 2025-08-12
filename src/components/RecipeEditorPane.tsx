@@ -2,6 +2,7 @@ import { Paper, Stack, Typography } from '@mui/material';
 import { useAppSelector } from '../state/hooks';
 import { selectCurrentRecipe } from '../state/editorSlice';
 import IngredientList from './IngredientList';
+import { WeightTargetPicker } from './WeightTargetPicker';
 
 export default function RecipeEditorPane() {
   const recipe = useAppSelector(selectCurrentRecipe);
@@ -10,6 +11,7 @@ export default function RecipeEditorPane() {
     <Paper sx={{ p: 8 }}>
       <Stack spacing={4}>
         <Typography variant="h2">{recipe.name || 'Unnamed Recipe'}</Typography>
+        <WeightTargetPicker />
         <Typography variant="h3">Flour</Typography>
         <IngredientList category="flours" />
         <Typography variant="h3">Other Ingredients</Typography>

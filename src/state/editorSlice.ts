@@ -10,6 +10,7 @@ import { toNormalized, type Normalized } from '../utils/normalize';
 
 export interface EditorState {
   recipes: Normalized<Recipe>;
+  flourWeightTarget: number;
   currentRecipeId: string;
 }
 
@@ -17,6 +18,7 @@ const initializeState = (): EditorState => {
   const recipes = [createDefaultRecipe()];
   return {
     recipes: toNormalized(recipes),
+    flourWeightTarget: 500,
     currentRecipeId: recipes[0].id,
   };
 };
@@ -27,6 +29,27 @@ const editorSlice = createSlice({
   reducers: {
     nameEdited: (state, { payload }: PayloadAction<string>) => {
       state.recipes.byId[state.currentRecipeId].name = payload;
+    },
+    targetWeightChanged: (
+      state,
+      { payload }: PayloadAction<{ weight: number; type: 'dough' | 'flour' }>
+    ) => {
+      switch (payload.type) {
+        case 'flour':
+          state.flourWeightTarget = payload.weight;
+          return;
+        case 'dough':
+          const list = Object.values(
+            state.recipes.byId[state.currentRecipeId].ingredients.others.byId
+          );
+          const totalPercentage =
+            list.reduce<number>(
+              (acc, ingredient) => acc + ingredient.measure,
+              0
+            ) + 100;
+          state.flourWeightTarget = (payload.weight * 100) / totalPercentage;
+          return;
+      }
     },
     ingredientAdded: makeAddIngredient('others'),
     ingredientRemoved: makeRemoveIngredient('others'),
@@ -101,6 +124,11 @@ function makeReorderIngredient(scope: 'flours' | 'others') {
 
 export const selectEditor = (state: RootState) => state.editor;
 
+export const selectFlourWeight = createSelector(
+  selectEditor,
+  (editor) => editor.flourWeightTarget
+);
+
 export const selectRecipes = createSelector(
   selectEditor,
   (editor) => editor.recipes.byId
@@ -144,6 +172,17 @@ export const selectOtherIngredientList = createSelector(
   (others) => others.allIds.map((id) => others.byId[id])
 );
 
+export const selectTotalPercentage = createSelector(
+  selectOtherIngredientList,
+  (list) =>
+    list.reduce<number>((acc, ingredient) => acc + ingredient.measure, 0) + 100
+);
+
+export const selectTotalWeight = createSelector(
+  [selectTotalPercentage, selectFlourWeight],
+  (percentage, flourWeight) => (percentage * flourWeight) / 100
+);
+
 export const selectFlourById = (id: string) =>
   createSelector(selectFlours, (flours) => flours.byId[id]);
 
@@ -152,6 +191,7 @@ export const selectOtherIngredientById = (id: string) =>
 
 export const {
   nameEdited,
+  targetWeightChanged,
   ingredientAdded,
   ingredientRemoved,
   ingredientEdited,

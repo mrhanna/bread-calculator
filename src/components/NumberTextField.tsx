@@ -8,7 +8,12 @@ export default function NumberTextField(props: TextFieldProps) {
 
   useEffect(() => {
     valueRef.current = props.value;
+    if (document.activeElement !== inputRef.current) {
+      setValue(`${props.value}`);
+    }
   }, [props.value]);
+
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,6 +36,7 @@ export default function NumberTextField(props: TextFieldProps) {
       value={value}
       onChange={handleChange}
       onBlur={handleBlur}
+      ref={inputRef}
       inputMode={props.inputMode ?? 'decimal'}
     />
   );
