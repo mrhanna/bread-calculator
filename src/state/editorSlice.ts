@@ -8,8 +8,7 @@ import type { RootState } from './store';
 import type { WritableDraft } from 'immer';
 import { toNormalized, type Normalized } from '../utils/normalize';
 
-const DECIMAL_PLACES = 1;
-const round = (number: number) => +number.toFixed(DECIMAL_PLACES);
+import { round } from '../utils/round';
 
 export type WeightTargetType = 'flour' | 'dough';
 export interface WeightTarget {
@@ -162,6 +161,10 @@ export const selectOtherIngredients = createSelector(
 
 export const selectFlourList = createSelector(selectFlours, (flours) =>
   flours.allIds.map((id) => flours.byId[id])
+);
+
+export const selectTotalFlourParts = createSelector(selectFlourList, (list) =>
+  list.reduce<number>((acc, ingredient) => acc + ingredient.measure, 0)
 );
 
 export const selectOtherIngredientList = createSelector(

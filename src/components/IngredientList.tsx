@@ -14,6 +14,7 @@ import {
   selectOtherIngredientList,
 } from '../state/editorSlice';
 import { Box, Button } from '@mui/material';
+import Measurement from './Measurement';
 
 const selectors = {
   flours: selectFlourList,
@@ -43,6 +44,11 @@ export default function IngredientList({
             id={ingredient.id}
             measureHidden={ingredients.length === 1}
           />
+
+          <Box sx={{ flexGrow: 1, py: 0.5 }}>
+            <Measurement category={category} measure={ingredient.measure} />
+          </Box>
+
           {ingredients.length > 1 && (
             <IconButton aria-label="Delete">
               <DeleteIcon
