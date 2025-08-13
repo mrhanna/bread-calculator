@@ -1,8 +1,11 @@
 import { Typography } from '@mui/material';
-import { selectFlourWeight, selectTotalFlourParts } from '../state/editorSlice';
-import { useAppSelector } from '../state/hooks';
-import { round } from '../utils/round';
-import type { RecipeIngredientCategory } from '../model';
+import {
+  selectFlourWeight,
+  selectTotalFlourParts,
+} from '../../state/editorSlice';
+import { useAppSelector } from '../../state/hooks';
+import { round } from '../../utils/round';
+import type { RecipeIngredientCategory } from '../../model';
 
 function IngredientMeasurement({ percentage }: { percentage: number }) {
   const whole = useAppSelector(selectFlourWeight);

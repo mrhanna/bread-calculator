@@ -2,17 +2,17 @@ import Autocomplete from '@mui/material/Autocomplete';
 import Stack, { type StackProps } from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 
-import { useAppDispatch, useAppSelector } from '../state/hooks';
+import { useAppDispatch, useAppSelector } from '../../state/hooks';
 
-import ingredients from '../assets/ingredients.json';
+import ingredients from '../../assets/ingredients.json';
 import { useCallback } from 'react';
 import {
   flourEdited,
   ingredientEdited,
   selectFlourById,
   selectOtherIngredientById,
-} from '../state/editorSlice';
-import type { RecipeIngredientCategory } from '../model';
+} from '../../state/editorSlice';
+import type { RecipeIngredientCategory } from '../../model';
 import NumberTextField from './NumberTextField';
 
 const selectors = {

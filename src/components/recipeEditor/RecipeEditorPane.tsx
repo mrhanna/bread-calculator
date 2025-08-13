@@ -1,6 +1,6 @@
 import { Box, Paper, Stack, Typography } from '@mui/material';
-import { useAppDispatch, useAppSelector } from '../state/hooks';
-import { nameEdited, selectCurrentRecipe } from '../state/editorSlice';
+import { useAppDispatch, useAppSelector } from '../../state/hooks';
+import { nameEdited, selectCurrentRecipe } from '../../state/editorSlice';
 import IngredientList from './IngredientList';
 import { WeightTargetPicker } from './WeightTargetPicker';
 import { visuallyHidden } from '@mui/utils';

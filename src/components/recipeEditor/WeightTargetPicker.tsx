@@ -1,11 +1,11 @@
 import { Stack, Typography } from '@mui/material';
 import NumberTextField from './NumberTextField';
-import { useAppDispatch, useAppSelector } from '../state/hooks';
+import { useAppDispatch, useAppSelector } from '../../state/hooks';
 import {
   selectFlourWeight,
   selectTotalWeight,
   targetWeightChanged,
-} from '../state/editorSlice';
+} from '../../state/editorSlice';
 
 export function WeightTargetPicker() {
   const flourWeight = useAppSelector(selectFlourWeight);
