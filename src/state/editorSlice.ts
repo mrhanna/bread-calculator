@@ -134,6 +134,10 @@ export const selectRecipeIds = createSelector(selectEditor, (editor) =>
   Object.keys(editor.recipes.byId)
 );
 
+export const selectRecipeList = createSelector(selectEditor, (editor) =>
+  editor.recipes.allIds.map((id) => editor.recipes.byId[id])
+);
+
 export const selectCurrentRecipeId = createSelector(
   selectEditor,
   (editor) => editor.currentRecipeId
